@@ -12,7 +12,7 @@ punish_snd_object = 2;
 reward_snd_object = 3;
 
 % TODO: possibly load params into param object?
-PARAMS = TASK_PARAMETERS();
+PARAMS = Parameters();
 
 % ------- defining scenes ------- %
 
