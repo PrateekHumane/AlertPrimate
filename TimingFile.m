@@ -12,7 +12,7 @@ punish_snd_object = 2;
 reward_snd_object = 3;
 
 % TODO: possibly load params into param object?
-load('Parameters.m');
+PARAMS = TASK_PARAMETERS();
 
 % ------- defining scenes ------- %
 
@@ -28,29 +28,29 @@ load('Parameters.m');
 
 fix1 = SingleTarget(tracker);	% Track if gaze within threshold 
 fix1.Target = fix_point;		% fixation target is taskobject1
-fix1.Threshold = fix_radius;	% fix radius in degrees
+fix1.Threshold = PARAMS.fix_radius;	% fix radius in degrees
 
 % WaitThenHold adapter waits for WaitTime until the fixation is acquired and then checks whether the fixation is held for HoldTime.
 wth1 = WaitThenHold(fix1);		% use fix1 as target to wait and hold on 
-wth1.WaitTime = fix_wait_time;
-wth1.HoldTime = fix_hold_time;
+wth1.WaitTime = PARAMS.fix_wait_time;
+wth1.HoldTime = PARAMS.fix_hold_time;
 
 scene1 = create_scene(wth1,fix_point);  % In this scene, we will present the fixation_point (TaskObject #1)
                                              % and wait for fixation.
 
 % -- scene 2: punishment -- %
 punish_box = BoxGraphic(null_);
-punish_box.EdgeColor = punish_box_edge_color;
-punish_box.FaceColor = punish_box_face_color;
-punish_box.Size = punish_box_size;
-punish_box.Position = punish_box_position;
+punish_box.EdgeColor = PARAMS.punish_box_edge_color;
+punish_box.FaceColor = PARAMS.punish_box_face_color;
+punish_box.Size = PARAMS.punish_box_size;
+punish_box.Position = PARAMS.punish_box_position;
 
 punish_snd = AudioSound(null_);
 % punish_snd.List = 'bad.wav';
 % punish_snd.PlaybackPosition = 0;
 
 tc1 = TimeCounter(null_);
-tc1.Duration = punish_duration;
+tc1.Duration = PARAMS.punish_duration;
 
 con1 = Concurrent(tc1);
 con1.add(punish_box);
@@ -60,16 +60,16 @@ scene2 = create_scene(con1,punish_snd_object);
 
 % -- scene 3: reward -- %
 reward_box = BoxGraphic(null_);
-reward_box.EdgeColor = reward_box_edge_color;
-reward_box.FaceColor = reward_box_face_color;
-reward_box.Size = reward_box_size;
-reward_box.Position = reward_box_position;
+reward_box.EdgeColor = PARAMS.reward_box_edge_color;
+reward_box.FaceColor = PARAMS.reward_box_face_color;
+reward_box.Size = PARAMS.reward_box_size;
+reward_box.Position = PARAMS.reward_box_position;
 
 reward_snd = AudioSound(null_);
 reward_snd.List = 'bell.wav';
 
 tc2 = TimeCounter(null_);
-tc2.Duration = reward_duration;
+tc2.Duration = PARAMS.reward_duration;
 
 con2 = Concurrent(tc2);
 con2.add(reward_box);
