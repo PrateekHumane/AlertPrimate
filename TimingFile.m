@@ -31,8 +31,10 @@ fix1.Target = fix_point;		% fixation target is taskobject1
 fix1.Threshold = PARAMS.fix_radius;	% fix radius in degrees
 
 % WaitThenHold adapter waits for WaitTime until the fixation is acquired and then checks whether the fixation is held for HoldTime.
-wth1 = WaitThenHold(fix1);		% use fix1 as target to wait and hold on 
-wth1.WaitTime = PARAMS.fix_wait_time;
+% wth1 = WaitThenHold(fix1);		% use fix1 as target to wait and hold on 
+wth1 = FreeThenHold(fix1);
+% wth1.WaitTime = PARAMS.fix_wait_time;
+wth1.MaxTime = PARAMS.fix_wait_time;
 wth1.HoldTime = PARAMS.fix_hold_time;
 
 scene1 = create_scene(wth1,fix_point);  % In this scene, we will present the fixation_point (TaskObject #1)
@@ -109,11 +111,12 @@ while state ~= 3
 			rt = wth1.AcquiredTime;      % Assign rt for the reaction time graph
 			if ~wth1.Success             % If the WithThenHold failed (either fixation is not acquired or broken during hold),
 				state = 1;				 % Next state is 
-			    if wth1.Waiting          % Check whether we were waiting for fixation.
-			        error_code = 4;      % If so, fixation was never made and therefore this is a "no fixation (4)" error.
-			    else
-			        error_code = 3;      % If we were not waiting, it means that fixation was acquired but not held,
-			    end
+                error_code = 4;
+%			    if wth1.Waiting          % Check whether we were waiting for fixation.
+%			        error_code = 4;      % If so, fixation was never made and therefore this is a "no fixation (4)" error.
+%			    else
+%			        error_code = 3;      % If we were not waiting, it means that fixation was acquired but not held,
+%			    end
 			else
 				state = 2;
 			end
@@ -124,7 +127,7 @@ while state ~= 3
 		case 2
 			% run scene reward
 			run_scene(scene3,30);
-			goodmonkey(100, 'juiceline',1, 'numreward',1, 'pausetime',500, 'eventmarker',40); % 100 ms of juice
+			goodmonkey(PARAMS.reward_juice_time, 'juiceline',1, 'numreward',1, 'pausetime',500, 'eventmarker',40); % 100 ms of juice
 			state = 3;
 	end
 end
