@@ -1,5 +1,5 @@
 hotkey('esc', 'escape_screen(); assignin(''caller'',''continue_'',false);'); % stop on esc press
-bhv_code(10,'Fix Cue',20,'Punish',30,'Reward',40,'Juice');  % behavioral codes used along with eventmarker
+bhv_code(10,'Fix Cue',20,'Stimulus',30,'Punish',40,'Reward',50,'Juice');  % behavioral codes used along with eventmarker
 
 % set eyetracker 
 if exist('eye_','var'), tracker = eye_;
@@ -40,7 +40,25 @@ wth1.HoldTime = PARAMS.fix_hold_time;
 scene1 = create_scene(wth1,fix_point);  % In this scene, we will present the fixation_point (TaskObject #1)
                                              % and wait for fixation.
 
-% -- scene 2: punishment -- %
+% -- scene 2: stimulus -- %
+
+fix2 = SingleTarget(tracker);	% Track if gaze within threshold 
+fix2.Target = fix_point;		% fixation target is taskobject1
+fix2.Threshold = PARAMS.fix_radius;	% fix radius in degrees
+
+fth2 = FreeThenHold(fix1);
+fth2.MaxTime = PARAMS.fix_wait_time;
+fth2.HoldTime = PARAMS.fix_hold_time;
+
+mov = MovieGraphic(null_);
+mov.List = { '1.mov', [0 0], 1};   % movie filename
+
+con1 = Concurrent(fth2);
+con1.add(mov);
+
+scene2 = create_scene(con1,fix_point); % present fixation spot (TaskObject #1) concurrently with stimulus video
+
+% -- scene 3: punishment -- %
 punish_box = BoxGraphic(null_);
 punish_box.EdgeColor = PARAMS.punish_box_edge_color;
 punish_box.FaceColor = PARAMS.punish_box_face_color;
@@ -54,13 +72,13 @@ punish_snd = AudioSound(null_);
 tc1 = TimeCounter(null_);
 tc1.Duration = PARAMS.punish_duration;
 
-con1 = Concurrent(tc1);
-con1.add(punish_box);
-con1.add(punish_snd);
+con2 = Concurrent(tc1);
+con2.add(punish_box);
+con2.add(punish_snd);
 
-scene2 = create_scene(con1,punish_snd_object); 
+scene3 = create_scene(con2,punish_snd_object); 
 
-% -- scene 3: reward -- %
+% -- scene 4: reward -- %
 reward_box = BoxGraphic(null_);
 reward_box.EdgeColor = PARAMS.reward_box_edge_color;
 reward_box.FaceColor = PARAMS.reward_box_face_color;
@@ -73,11 +91,11 @@ reward_snd.List = 'bell.wav';
 tc2 = TimeCounter(null_);
 tc2.Duration = PARAMS.reward_duration;
 
-con2 = Concurrent(tc2);
-con2.add(reward_box);
-con2.add(reward_snd);
+con3 = Concurrent(tc2);
+con3.add(reward_box);
+con3.add(reward_snd);
 
-scene3 = create_scene(con2); 
+scene4 = create_scene(con3); 
 
 
 % ------- running task ------- %
@@ -99,9 +117,10 @@ error_code = 0;
 
 % list of all states:
 %	0 - fixate
-% 	1 - punish
-%	2 - reward
-%	3 - done
+%	1 - stim
+% 	2 - punish
+%	3 - reward
+%	4 - done
 state = 0;
 
 while state ~= 3
@@ -110,7 +129,7 @@ while state ~= 3
 			run_scene(scene1,10);        % Run the first scene (eventmaker 10)
 			rt = wth1.AcquiredTime;      % Assign rt for the reaction time graph
 			if ~wth1.Success             % If the WithThenHold failed (either fixation is not acquired or broken during hold),
-				state = 1;				 % Next state is 
+				state = 2;				 % Next state is 
                 error_code = 4;
 %			    if wth1.Waiting          % Check whether we were waiting for fixation.
 %			        error_code = 4;      % If so, fixation was never made and therefore this is a "no fixation (4)" error.
@@ -118,17 +137,26 @@ while state ~= 3
 %			        error_code = 3;      % If we were not waiting, it means that fixation was acquired but not held,
 %			    end
 			else
-				state = 2;
+				state = 1;
 			end
 		case 1
-			% run scene punish
-			run_scene(scene2,20);		
-			state = 3;
+			run_scene(scene2,20);        % Run the first scene (eventmaker 10)
+			rt = fth2.AcquiredTime;      % Assign rt for the reaction time graph
+			if ~fth2.Success             % If the WithThenHold failed (either fixation is not acquired or broken during hold),
+				state = 2;				 % Next state is 
+                error_code = 4;
+			else
+				state = 3;
+			end
 		case 2
+			% run scene punish
+			run_scene(scene3,30);		
+			state = 4;
+		case 3
 			% run scene reward
-			run_scene(scene3,30);
+			run_scene(scene4,40);
 			goodmonkey(PARAMS.reward_juice_time, 'juiceline',1, 'numreward',1, 'pausetime',500, 'eventmarker',40); % 100 ms of juice
-			state = 3;
+			state = 4;
 	end
 end
 idle(50);

@@ -8,7 +8,7 @@ PARAMS.fix_radius = 1.5; % fixation window (in degrees):
 PARAMS.fix_wait_time = 10000; % time patient has to fixate before punishment
 PARAMS.fix_hold_time = 100; % time patient needs to hold fixation to get reward
 
-% -- scene 2: punishment params -- %
+% -- scene 3: punishment params -- %
 PARAMS.punish_box_edge_color = [1 0 0];
 PARAMS.punish_box_face_color = [1 0 0];
 PARAMS.punish_box_size = [12 9];
@@ -16,7 +16,7 @@ PARAMS.punish_box_position = [0 0];
 
 PARAMS.punish_duration= 1500; % in ms
 
-% -- scene 3: reward params-- %
+% -- scene 4: reward params-- %
 PARAMS.reward_box_edge_color = [0 1 0];
 PARAMS.reward_box_face_color = [0 1 0];
 PARAMS.reward_box_size = [12 9];
