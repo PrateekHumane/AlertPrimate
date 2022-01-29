@@ -119,11 +119,12 @@ error_code = 0;
 %	0 - fixate
 %	1 - stim
 % 	2 - punish
-%	3 - reward
-%	4 - done
+%	3 - rewardTransition 
+%	4 - reward
+%	5 - done
 state = 0;
 
-while state ~= 3
+while state ~= 5
 	switch state
 		case 0
 			run_scene(scene1,10);        % Run the first scene (eventmaker 10)
@@ -153,10 +154,15 @@ while state ~= 3
 			run_scene(scene3,30);		
 			state = 4;
 		case 3
+			% anticipate reward
+			run_scene(scene1,10);
+			state = 4;
+		case 4
 			% run scene reward
 			run_scene(scene4,40);
 			goodmonkey(PARAMS.reward_juice_time, 'juiceline',1, 'numreward',1, 'pausetime',500, 'eventmarker',40); % 100 ms of juice
-			state = 4;
+			state = 5;
+
 	end
 end
 idle(50);
