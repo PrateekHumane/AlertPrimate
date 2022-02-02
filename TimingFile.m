@@ -23,7 +23,7 @@ PARAMS = Parameters();
 %
 %scene0 = create_scene(tc0);
 
-% -- scene 1: fixation -- %
+% -- scene 2: fixation -- %
 % SingleTarget adapter checks if eyetracker gaze is within Threshold from Target
 
 fix1 = SingleTarget(tracker);	% Track if gaze within threshold 
@@ -32,33 +32,57 @@ fix1.Threshold = PARAMS.fix_radius;	% fix radius in degrees
 
 % WaitThenHold adapter waits for WaitTime until the fixation is acquired and then checks whether the fixation is held for HoldTime.
 % wth1 = WaitThenHold(fix1);		% use fix1 as target to wait and hold on 
-wth1 = FreeThenHold(fix1);
+fth1 = FreeThenHold(fix1);
 % wth1.WaitTime = PARAMS.fix_wait_time;
-wth1.MaxTime = PARAMS.fix_wait_time;
-wth1.HoldTime = PARAMS.fix_hold_time;
+fth1.MaxTime = PARAMS.fix_wait_time;
+fth1.HoldTime = PARAMS.fix_hold_time;
 
-scene1 = create_scene(wth1,fix_point);  % In this scene, we will present the fixation_point (TaskObject #1)
+scene2 = create_scene(fth1,fix_point);  % In this scene, we will present the fixation_point (TaskObject #1)
                                              % and wait for fixation.
 
-% -- scene 2: stimulus -- %
+% -- scene 3: stimulus -- %
 
-fix2 = SingleTarget(tracker);	% Track if gaze within threshold 
-fix2.Target = fix_point;		% fixation target is taskobject1
-fix2.Threshold = PARAMS.fix_radius;	% fix radius in degrees
-
-fth2 = FreeThenHold(fix1);
-fth2.MaxTime = PARAMS.fix_wait_time;
-fth2.HoldTime = PARAMS.fix_hold_time;
+lh1 = LooseHold(fix); % hold while allowing for breaks (blinking) 
+lh1.HoldTime = PARAMS.stim_fix_hold_time;
+lh1.BreakTime = PARAMS.stim_fix_break_time;
 
 mov = MovieGraphic(null_);
 mov.List = { '1.mov', [0 0], 1};   % movie filename
 
-con1 = Concurrent(fth2);
+con1 = Concurrent(lh1);
 con1.add(mov);
 
-scene2 = create_scene(con1,fix_point); % present fixation spot (TaskObject #1) concurrently with stimulus video
+scene3 = create_scene(con1,fix_point); % present fixation spot (TaskObject #1) concurrently with stimulus video
 
-% -- scene 3: punishment -- %
+
+% -- scene 4: anticipate reward -- %
+
+lh2 = LooseHold(fix); % hold while allowing for breaks (blinking) 
+lh2.HoldTime = PARAMS.fix2_hold_time;
+lh2.BreakTime = PARAMS.fix2_break_time;
+scene4 = create_scene(lh2);
+
+
+% -- scene 5: reward -- %
+reward_box = BoxGraphic(null_);
+reward_box.EdgeColor = PARAMS.reward_box_edge_color;
+reward_box.FaceColor = PARAMS.reward_box_face_color;
+reward_box.Size = PARAMS.reward_box_size;
+reward_box.Position = PARAMS.reward_box_position;
+
+reward_snd = AudioSound(null_);
+reward_snd.List = 'bell.wav';
+
+tc2 = TimeCounter(null_);
+tc2.Duration = PARAMS.reward_duration;
+
+con3 = Concurrent(tc2);
+con3.add(reward_box);
+con3.add(reward_snd);
+
+scene5 = create_scene(con3); 
+
+% -- scene 6: punishment -- %
 punish_box = BoxGraphic(null_);
 punish_box.EdgeColor = PARAMS.punish_box_edge_color;
 punish_box.FaceColor = PARAMS.punish_box_face_color;
@@ -76,26 +100,9 @@ con2 = Concurrent(tc1);
 con2.add(punish_box);
 con2.add(punish_snd);
 
-scene3 = create_scene(con2,punish_snd_object); 
+scene6 = create_scene(con2,punish_snd_object); 
 
-% -- scene 4: reward -- %
-reward_box = BoxGraphic(null_);
-reward_box.EdgeColor = PARAMS.reward_box_edge_color;
-reward_box.FaceColor = PARAMS.reward_box_face_color;
-reward_box.Size = PARAMS.reward_box_size;
-reward_box.Position = PARAMS.reward_box_position;
 
-reward_snd = AudioSound(null_);
-reward_snd.List = 'bell.wav';
-
-tc2 = TimeCounter(null_);
-tc2.Duration = PARAMS.reward_duration;
-
-con3 = Concurrent(tc2);
-con3.add(reward_box);
-con3.add(reward_snd);
-
-scene4 = create_scene(con3); 
 
 
 % ------- running task ------- %
@@ -116,54 +123,56 @@ scene4 = create_scene(con3);
 error_code = 0;
 
 % list of all states:
-%	0 - fixate
-%	1 - stim
-% 	2 - punish
-%	3 - rewardTransition 
-%	4 - reward
-%	5 - done
+% 	0 - start
+%	2 - fixate
+%	3 - stim
+% 	4 - punish
+%	5 - rewardTransition 
+%	6 - reward
+%	7 - done
 state = 0;
 
-while state ~= 5
+while state ~= 7
 	switch state
-		case 0
-			run_scene(scene1,10);        % Run the first scene (eventmaker 10)
+		case 2
+			run_scene(scene2,10);        % just fixation 
 			rt = wth1.AcquiredTime;      % Assign rt for the reaction time graph
 			if ~wth1.Success             % If the WithThenHold failed (either fixation is not acquired or broken during hold),
-				state = 2;				 % Next state is 
-                error_code = 4;
-%			    if wth1.Waiting          % Check whether we were waiting for fixation.
-%			        error_code = 4;      % If so, fixation was never made and therefore this is a "no fixation (4)" error.
-%			    else
-%			        error_code = 3;      % If we were not waiting, it means that fixation was acquired but not held,
-%			    end
-			else
-				state = 1;
-			end
-		case 1
-			run_scene(scene2,20);        % Run the first scene (eventmaker 10)
-			rt = fth2.AcquiredTime;      % Assign rt for the reaction time graph
-			if ~fth2.Success             % If the WithThenHold failed (either fixation is not acquired or broken during hold),
-				state = 2;				 % Next state is 
+				state = 6;				 % Next state is 
                 error_code = 4;
 			else
 				state = 3;
 			end
-		case 2
-			% run scene punish
-			run_scene(scene3,30);		
-			state = 4;
 		case 3
-			% anticipate reward
-			run_scene(scene1,10);
-			state = 4;
+			run_scene(scene3,20);        % presents stimulus and checks fixation 
+			rt = fth2.AcquiredTime;      % Assign rt for the reaction time graph
+			if ~fth2.Success
+				state = 7;
+                error_code = 4;
+			else
+				state = 4;
+			end
 		case 4
-			% run scene reward
-			run_scene(scene4,40);
-			goodmonkey(PARAMS.reward_juice_time, 'juiceline',1, 'numreward',1, 'pausetime',500, 'eventmarker',40); % 100 ms of juice
+			% anticipate reward
+			run_scene(scene4,10);
+			rt = fth2.AcquiredTime;      % Assign rt for the reaction time graph
+			if ~fth2.Success
+				state = 7;
+                error_code = 4;
+			else
+				state = 5;
+			end
+
 			state = 5;
+		case 5
+			% run scene reward
+			run_scene(scene5,50);
+			goodmonkey(PARAMS.reward_juice_time, 'juiceline',1, 'numreward',1, 'pausetime',500, 'eventmarker',40); % 100 ms of juice
+			state = 7;
+		case 6
+			% run scene punish
+			run_scene(scene6,40);		
+			state = 7;
 
 	end
 end
-idle(50);
-trialerror(error_code);      % Add the result to the trial history
