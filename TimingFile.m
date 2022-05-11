@@ -42,22 +42,30 @@ scene2 = create_scene(fth1,fix_point);  % In this scene, we will present the fix
 
 % -- scene 3: stimulus -- %
 
-lh1 = LooseHold(fix); % hold while allowing for breaks (blinking) 
+lh1 = LooseHold(fix1); % hold while allowing for breaks (blinking) 
 lh1.HoldTime = PARAMS.stim_fix_hold_time;
 lh1.BreakTime = PARAMS.stim_fix_break_time;
 
+
+gray_circle = CircleGraphic(null_);
+gray_circle.EdgeColor = PARAMS.gray_circle_color;
+gray_circle.FaceColor = PARAMS.gray_circle_color;
+gray_circle.Size = PARAMS.gray_circle_diameter;
+gray_circle.Position = [0,0];
+
 mov = MovieGraphic(null_);
-mov.List = { '1.mov', [0 0], 1};   % movie filename
+mov.List = { PARAMS.stim_filename, [0 0], 1};   % movie filename
 
 con1 = Concurrent(lh1);
 con1.add(mov);
+con1.add(gray_circle);
 
 scene3 = create_scene(con1,fix_point); % present fixation spot (TaskObject #1) concurrently with stimulus video
 
 
 % -- scene 4: anticipate reward -- %
 
-lh2 = LooseHold(fix); % hold while allowing for breaks (blinking) 
+lh2 = LooseHold(fix1); % hold while allowing for breaks (blinking) 
 lh2.HoldTime = PARAMS.fix2_hold_time;
 lh2.BreakTime = PARAMS.fix2_break_time;
 scene4 = create_scene(lh2);
@@ -130,40 +138,36 @@ error_code = 0;
 %	5 - rewardTransition 
 %	6 - reward
 %	7 - done
-state = 0;
+state = 2;
 
 while state ~= 7
 	switch state
 		case 2
 			run_scene(scene2,10);        % just fixation 
-			rt = wth1.AcquiredTime;      % Assign rt for the reaction time graph
-			if ~wth1.Success             % If the WithThenHold failed (either fixation is not acquired or broken during hold),
+			rt = fth1.AcquiredTime;      % Assign rt for the reaction time graph
+			if ~fth1.Success             % If the WithThenHold failed (either fixation is not acquired or broken during hold),
 				state = 6;				 % Next state is 
                 error_code = 4;
 			else
 				state = 3;
 			end
 		case 3
-			run_scene(scene3,20);        % presents stimulus and checks fixation 
-			rt = fth2.AcquiredTime;      % Assign rt for the reaction time graph
-			if ~fth2.Success
+			run_scene(scene3,20);        % presents stimulus and checks fixation
+			if ~lh1.Success
 				state = 7;
-                error_code = 4;
+                error_code = 3;
 			else
 				state = 4;
 			end
 		case 4
 			% anticipate reward
 			run_scene(scene4,10);
-			rt = fth2.AcquiredTime;      % Assign rt for the reaction time graph
-			if ~fth2.Success
+			if ~lh2.Success
 				state = 7;
-                error_code = 4;
+                error_code = 3;
 			else
 				state = 5;
-			end
-
-			state = 5;
+            end
 		case 5
 			% run scene reward
 			run_scene(scene5,50);
@@ -171,8 +175,10 @@ while state ~= 7
 			state = 7;
 		case 6
 			% run scene punish
-			run_scene(scene6,40);		
+			run_scene(scene6,30);		
 			state = 7;
 
 	end
 end
+
+trialerror(error_code);      % Add the result to the trial history
