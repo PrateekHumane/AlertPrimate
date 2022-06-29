@@ -26,12 +26,9 @@ fix1.Target = fix_point;		% fixation target is taskobject1
 fix1.Threshold = PARAMS.fix_radius;	% fix radius in degrees
 
 % ------- defining scenes ------- %
-% -- scene stim: -- %
-% stim = Stimulator(null_);
-% stim.Channel = [1 2];   % Stimulation #1 & #2
-% stim.Waveform = {repelem(5,200) repelem(10,200)};   % two sets of waveforms
-% stim.Frequency = 1000;
-% sceneStim = create_scene(stim);
+stim = Stimulator(null_);
+stim.Channel = [1 2];   % Stimulation #1 & #2
+stim.Frequency = PARAMS.stim_frequency;
 
 % this scene can be used if more time is needed before start of trial
 % -- scene 0: blank -- %
@@ -49,7 +46,13 @@ tc1.Duration = PARAMS.no_movement_duration;
 
 or1 = AllContinue(pc);
 or1.add(tc1); % end scene when movement is detected or time has finished
-scene1 = create_scene(or1);
+
+% max time the scene will last (in seconds so divide by 1000) times the waveform datapoints needed per second
+stim.Waveform = repelem(1,ceil(PARAMS.no_movement_duration/1000*PARAMS.stim_frequency));
+con1 = Concurrent(or1);
+con1.add(stim);
+
+scene1 = create_scene(con1);
 
 
 % -- scene 2: fixation -- %
@@ -65,7 +68,12 @@ fth1.HoldTime = PARAMS.fix_hold_time;
 or2 = AllContinue(fth1);
 or2.add(pc); % stop scene when movement is detected or freethenhold has finished
 
-scene2 = create_scene(or2,fix_point);  % In this scene, we will present the fixation_point (TaskObject #1)
+% max time the scene will last (in seconds so divide by 1000) times the waveform datapoints needed per second
+stim.Waveform = repelem(2,ceil(PARAMS.fix_wait_time/1000*PARAMS.stim_frequency));
+con2 = Concurrent(or2);
+con2.add(stim);
+
+scene2 = create_scene(con2,fix_point);  % In this scene, we will present the fixation_point (TaskObject #1)
                                              % and wait for fixation.
 
 % -- scene 3: stimulus -- %
@@ -83,11 +91,14 @@ gray_circle.Position = [0,0];
 mov = MovieGraphic(null_);
 mov.List = { PARAMS.stim_filename, [0 0], 1};   % movie filename
 
-con1 = Concurrent(lh1);
-con1.add(mov);
-con1.add(gray_circle);
+con3 = Concurrent(lh1);
+con3.add(mov);
+con3.add(gray_circle);
+% max time the scene will last (in seconds so divide by 1000) times the waveform datapoints needed per second
+stim.Waveform = repelem(3,ceil(PARAMS.stim_fix_hold_time/1000*PARAMS.stim_frequency));
+con3.add(stim);
 
-or3 = AllContinue(con1);
+or3 = AllContinue(con3);
 or3.add(pc);
 
 scene3 = create_scene(or3,fix_point); % present fixation spot (TaskObject #1) concurrently with stimulus video
@@ -102,7 +113,12 @@ lh2.BreakTime = PARAMS.fix2_break_time;
 or4 = AllContinue(lh2);
 or4.add(pc);
 
-scene4 = create_scene(or4);
+% max time the scene will last (in seconds so divide by 1000) times the waveform datapoints needed per second
+stim.Waveform = repelem(4,ceil(PARAMS.fix2_hold_time/1000*PARAMS.stim_frequency));
+con4 = Concurrent(or4);
+con4.add(stim);
+
+scene4 = create_scene(con4);
 
 
 % -- scene 5: reward -- %
@@ -118,11 +134,14 @@ reward_snd.List = 'bell.wav';
 tc1 = TimeCounter(null_);
 tc1.Duration = PARAMS.reward_duration;
 
-con2 = Concurrent(tc1);
-con2.add(reward_box);
-con2.add(reward_snd);
+con5 = Concurrent(tc1);
+con5.add(reward_box);
+con5.add(reward_snd);
+stim.Waveform = repelem(5,ceil(PARAMS.reward_duration/1000*PARAMS.stim_frequency));
+con5.add(stim);
 
-scene5 = create_scene(con2); 
+
+scene5 = create_scene(con5); 
 
 % -- scene 6: punishment movement -- %
 punish_movement_box = BoxGraphic(null_);
@@ -137,11 +156,14 @@ punish_movement_snd.List = 'bad.wav';
 tc2 = TimeCounter(null_);
 tc2.Duration = PARAMS.punish_duration;
 
-con3 = Concurrent(tc2);
-con3.add(punish_movement_box);
-con3.add(punish_movement_snd);
+con6 = Concurrent(tc2);
+con6.add(punish_movement_box);
+con6.add(punish_movement_snd);
+stim.Waveform = repelem(6,ceil(PARAMS.punish_duration/1000*PARAMS.stim_frequency));
+con6.add(stim);
 
-scene6 = create_scene(con3); 
+
+scene6 = create_scene(con6); 
 
 % -- scene 7: punishment -- %
 punish_box = BoxGraphic(null_);
@@ -157,11 +179,14 @@ punish_snd.List = 'bad2.wav';
 tc3 = TimeCounter(null_);
 tc3.Duration = PARAMS.punish_duration;
 
-con4 = Concurrent(tc3);
-con4.add(punish_box);
-con4.add(punish_snd);
+con7 = Concurrent(tc3);
+con7.add(punish_box);
+con7.add(punish_snd);
+stim.Waveform = repelem(7,ceil(PARAMS.punish_duration/1000*PARAMS.stim_frequency));
+con7.add(stim);
 
-scene7 = create_scene(con4); 
+
+scene7 = create_scene(con7); 
 
 
 
@@ -184,9 +209,6 @@ scene7 = create_scene(con4);
 
 % start error code at 0
 error_code = 0;
-
-stim.WaveformNumber = 1;   % waveform set #1
-% run_scne(sceneStim);
 
 % list of all states:
 % 	0 - start
@@ -262,6 +284,3 @@ while state ~= 8
     end
     trialerror(error_code);      % Add the result to the trial history
 end
-
-stim.WaveformNumber = 2;   % waveform set #1
-% run_scne(sceneStim);
