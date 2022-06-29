@@ -107,8 +107,8 @@ scene4 = create_scene(or4);
 
 % -- scene 5: reward -- %
 reward_box = BoxGraphic(null_);
-reward_box.EdgeColor = PARAMS.reward_box_edge_color;
-reward_box.FaceColor = PARAMS.reward_box_face_color;
+reward_box.EdgeColor = PARAMS.reward_box_color;
+reward_box.FaceColor = PARAMS.reward_box_color;
 reward_box.Size = PARAMS.reward_box_size;
 reward_box.Position = PARAMS.reward_box_position;
 
@@ -126,8 +126,8 @@ scene5 = create_scene(con2);
 
 % -- scene 6: punishment movement -- %
 punish_movement_box = BoxGraphic(null_);
-punish_movement_box.EdgeColor = PARAMS.punish_box_edge_color;
-punish_movement_box.FaceColor = PARAMS.punish_box_edge_color;
+punish_movement_box.EdgeColor = PARAMS.punish_movement_box_color;
+punish_movement_box.FaceColor = PARAMS.punish_movement_box_color;
 punish_movement_box.Size = PARAMS.punish_box_size;
 punish_movement_box.Position = PARAMS.punish_box_position;
 
@@ -145,8 +145,8 @@ scene6 = create_scene(con3);
 
 % -- scene 7: punishment -- %
 punish_box = BoxGraphic(null_);
-punish_box.EdgeColor = PARAMS.punish_box_edge_color;
-punish_box.FaceColor = PARAMS.punish_box_face_color;
+punish_box.EdgeColor = PARAMS.punish_box_color;
+punish_box.FaceColor = PARAMS.punish_box_color;
 punish_box.Size = PARAMS.punish_box_size;
 punish_box.Position = PARAMS.punish_box_position;
 
