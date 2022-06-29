@@ -3,8 +3,9 @@ bhv_code(0, 'No Movement', 10,'Fix Cue',20,'Stimulus',30,'Punish',40,'Reward',50
 
 % give names to the TaskObjects defined in the conditions file:
 fix_point = 1;
-punish_snd_object = 2;
-reward_snd_object = 3;
+punish_movement_snd_object = 2;
+punish_snd_object = 3;
+reward_snd_object = 4;
 
 % load params
 PARAMS = Parameters();
@@ -114,16 +115,35 @@ reward_box.Position = PARAMS.reward_box_position;
 reward_snd = AudioSound(null_);
 reward_snd.List = 'bell.wav';
 
+tc1 = TimeCounter(null_);
+tc1.Duration = PARAMS.reward_duration;
+
+con2 = Concurrent(tc1);
+con2.add(reward_box);
+con2.add(reward_snd);
+
+scene5 = create_scene(con2); 
+
+% -- scene 6: punishment movement -- %
+punish_movement_box = BoxGraphic(null_);
+punish_movement_box.EdgeColor = PARAMS.punish_box_edge_color;
+punish_movement_box.FaceColor = PARAMS.punish_box_edge_color;
+punish_movement_box.Size = PARAMS.punish_box_size;
+punish_movement_box.Position = PARAMS.punish_box_position;
+
+punish_movement_snd = AudioSound(null_);
+punish_movement_snd.List = 'bad.wav';
+
 tc2 = TimeCounter(null_);
-tc2.Duration = PARAMS.reward_duration;
+tc2.Duration = PARAMS.punish_duration;
 
 con3 = Concurrent(tc2);
-con3.add(reward_box);
-con3.add(reward_snd);
+con3.add(punish_movement_box);
+con3.add(punish_movement_snd);
 
-scene5 = create_scene(con3); 
+scene6 = create_scene(con3); 
 
-% -- scene 6: punishment -- %
+% -- scene 7: punishment -- %
 punish_box = BoxGraphic(null_);
 punish_box.EdgeColor = PARAMS.punish_box_edge_color;
 punish_box.FaceColor = PARAMS.punish_box_face_color;
@@ -131,17 +151,19 @@ punish_box.Size = PARAMS.punish_box_size;
 punish_box.Position = PARAMS.punish_box_position;
 
 punish_snd = AudioSound(null_);
-% punish_snd.List = 'bad.wav';
+punish_snd.List = 'bad2.wav';
 % punish_snd.PlaybackPosition = 0;
 
-tc1 = TimeCounter(null_);
-tc1.Duration = PARAMS.punish_duration;
+tc3 = TimeCounter(null_);
+tc3.Duration = PARAMS.punish_duration;
 
-con2 = Concurrent(tc1);
-con2.add(punish_box);
-con2.add(punish_snd);
+con4 = Concurrent(tc3);
+con4.add(punish_box);
+con4.add(punish_snd);
 
-scene6 = create_scene(con2,punish_snd_object); 
+scene7 = create_scene(con4); 
+
+
 
 
 
@@ -171,13 +193,14 @@ stim.WaveformNumber = 1;   % waveform set #1
 %	1 - no movement 
 %	2 - fixate
 %	3 - stim
-% 	4 - punish
-%	5 - rewardTransition 
-%	6 - reward
-%	7 - done
+%	4 - rewardTransition 
+%	5 - reward
+% 	6 - punish movement
+% 	7 - punish 
+%	8 - done
 
 state = 1;
-while state ~= 7
+while state ~= 8
     disp(state);
 	switch state
 		case 1
@@ -195,7 +218,7 @@ while state ~= 7
 				state = 6;
                 error_code = 6;
             elseif ~fth1.Success             % If the WithThenHold failed (either fixation is not acquired or broken during hold),
-				state = 6;
+				state = 7;
                 error_code = 4;
 			else
 				state = 3;
@@ -206,7 +229,7 @@ while state ~= 7
 				state = 6;
                 error_code = 6;
             elseif ~lh1.Success
-				state = 7;
+				state = 8;
                 error_code = 3;
 			else
 				state = 4;
@@ -218,7 +241,7 @@ while state ~= 7
 				state = 6;
                 error_code = 6;
             elseif ~lh2.Success				 % if animal breaks fixation
-				state = 7;
+				state = 8;
                 error_code = 3;
 			else
 				state = 5;
@@ -227,12 +250,15 @@ while state ~= 7
 			% run scene reward
 			run_scene(scene5,50);
 			goodmonkey(PARAMS.reward_juice_time, 'juiceline',1, 'numreward',1, 'pausetime',500, 'eventmarker',40); % 100 ms of juice
-			state = 7;
+			state = 8;
 		case 6
-			% run scene punish
+			% run scene punish movement
 			run_scene(scene6,30);		
-			state = 7;
-
+			state = 8;
+		case 7
+			% run scene punish
+			run_scene(scene7,30);		
+			state = 8;
     end
     trialerror(error_code);      % Add the result to the trial history
 end
